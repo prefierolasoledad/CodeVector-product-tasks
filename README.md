@@ -103,7 +103,7 @@ Returns all distinct product categories (for populating a filter dropdown).
 ### Why cursor/keyset pagination instead of `skip()`/offset
 
 **The problem with offset pagination:**
-- `skip(N)` must walk through N documents on every call — it's O(n) and gets slower linearly with page depth. At 190k depth on this dataset, `skip()` takes ~238ms vs ~3ms for cursor pagination (**~80× slower**).
+- `skip(N)` must walk through N documents on every call — it's O(n) and gets slower linearly with page depth. At 190k depth on this dataset, `skip()` takes ~252ms vs ~2ms for cursor pagination (**~126× faster**).
 - When new data is inserted while a user is paginating, offset-based pages shift: items get duplicated or skipped entirely. There's no way to fix this without locking or snapshots.
 
 **How cursor pagination solves both:**
@@ -115,7 +115,7 @@ Returns all distinct product categories (for populating a filter dropdown).
 
 - `updatedAt` changes on every mutation. If we sorted by `updatedAt`, editing a product would move it to the top of the list, causing it to re-appear on page 1 for someone who already saw it — a duplicate.
 - `createdAt` is immutable after insert, so a product's position in the sort order never changes after creation.
-- `_id` (ObjectId) is monotonically increasing and globally unique, so it serves as a perfect tiebreaker when multiple products share the same `createdAt` millisecond. At 200k inserts, many documents *do* collide on the same millisecond — this was validated with a dedicated test (100 documents with identical `createdAt`, paginated with limit=7 across 15 pages: zero duplicates, zero skips).
+- `_id` (ObjectId) is monotonically increasing and globally unique, so it serves as a perfect tiebreaker when multiple products share the same `createdAt` millisecond. While natural collisions are rare at this dataset's timestamp spacing, correctness of this edge case is explicitly proven by a dedicated test fixture in `validatePagination.js` (100 documents with an identical timestamp, paginated with limit=7 across 15 pages: zero duplicates, zero skips).
 
 ### Indexes
 
@@ -201,7 +201,7 @@ I used AI (Claude) as a pair-programming assistant throughout this project. Here
 - Index design — confirmed with `.explain("executionStats")` that queries use IXSCAN and examine only `limit` documents
 - Correctness under concurrent inserts — ran a test inserting 50 new products mid-pagination and verified zero duplicates/skips
 - Same-millisecond collision handling — validated with 100 identical-`createdAt` documents that the `_id` tiebreaker works
-- Performance at scale — benchmarked cursor vs `skip()` at depths up to 190k (cursor is ~80× faster)
+- Performance at scale — benchmarked cursor vs `skip()` at depths up to 190k (cursor is ~126× faster)
 
 **What AI got wrong that I caught:**
 - AI's first version of the last-page boundary test (Test 3 in `validatePagination.js`) used the real "Garden" category (~11,000 docs) and computed a page size of `ceil(11063 / 3) + 1 ≈ 3689`. But the API enforces a server-side maximum of `limit = 100`, so every request silently capped to 100 items. The test's safety limit of 20 pages was hit before paginating through all 11k docs, causing a false failure. I caught this, redesigned the test to insert a small controlled dataset (25 docs in a unique test category, paginated with `limit=10`), which correctly produces exactly 3 pages (10 + 10 + 5) and verifies the `nextCursor: null` boundary.
