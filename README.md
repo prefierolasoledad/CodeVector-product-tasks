@@ -6,7 +6,7 @@ A high-performance REST API serving 200,000 products with **cursor-based (keyset
 
 - **Backend:** Node.js, Express 5
 - **Database:** MongoDB (Mongoose ODM)
-- **Hosting:** [LIVE URL] (Render) / MongoDB Atlas
+- **Hosting:** [Render Link](https://codevector-product-tasks.onrender.com/) (Render) / MongoDB Atlas
 - **UI:** Single static HTML/CSS/JS page (no framework)
 
 ## Setup Instructions
@@ -14,7 +14,7 @@ A high-performance REST API serving 200,000 products with **cursor-based (keyset
 ### 1. Clone & install
 
 ```bash
-git clone [REPO URL]
+git clone https://github.com/prefierolasoledad/CodeVector-product-tasks.git
 cd CodeVector-product-tasks
 npm install
 ```
@@ -165,7 +165,7 @@ For a deeper technical walkthrough of the architecture, cursor mechanics, and re
 
 ## Live URL
 
-**[LIVE URL]**
+**[https://codevector-product-tasks.onrender.com/](https://codevector-product-tasks.onrender.com/)**
 
 To seed/reset data on a fresh deployment: set the `MONGO_URI` environment variable to your Atlas connection string, then run `npm run seed`. The script drops the existing collection first, so it's safe to re-run.
 
