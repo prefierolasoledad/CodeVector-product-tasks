@@ -198,7 +198,7 @@ If the cursor is on **Doc B**, we want to get **C, D, E** (everything after B in
 
 If we only used `createdAt < lastCreatedAt` (without the `$or`), we'd **skip Doc C entirely** because it has the same `createdAt` as the cursor. This is exactly the bug that naive `createdAt`-only sorting produces.
 
-> **⚠️ IMPORTANT:** The `$or` condition is the single most important piece of logic in the project. It's what makes cursor pagination correct when documents share the same timestamp — and at 200k inserts, many will.
+> **⚠️ IMPORTANT:** The `$or` condition is the single most important piece of logic in the project. It's what makes cursor pagination correct when documents share the same timestamp — and correctness of this edge case is explicitly validated with a dedicated, identical-timestamp test fixture in `validatePagination.js` Test 4.
 
 #### Step 4: Building the Response
 
@@ -337,18 +337,18 @@ sequenceDiagram
 |------|---------------|
 | **Deep cursor explain** | IXSCAN, 20 docs examined for 20 returned (even 100k deep), <1ms |
 | **Category cursor explain** | IXSCAN, uses the compound category index, 2ms |
-| **Cursor vs skip() benchmark** | At 190k depth: skip ≈ 238ms, cursor ≈ 3ms → **~80× faster** |
+| **Cursor vs skip() benchmark** | At 190k depth: skip ≈ 252ms, cursor ≈ 2ms → **~126× faster** |
 
 **Full benchmark table (from latest run):**
 
 | Depth | skip() | cursor | Speedup |
 |-------|--------|--------|---------|
-| 100 | 4 ms | 4 ms | 1× |
-| 1,000 | 5 ms | 3 ms | 1.7× |
-| 10,000 | 14 ms | 2 ms | 7× |
-| 50,000 | 51 ms | 3 ms | 17× |
-| 100,000 | 91 ms | 3 ms | 30× |
-| 190,000 | 238 ms | 3 ms | **80×** |
+| 100 | 4 ms | 3 ms | 1.3× |
+| 1,000 | 3 ms | 2 ms | 1.5× |
+| 10,000 | 8 ms | 2 ms | 4× |
+| 50,000 | 67 ms | 4 ms | 16.8× |
+| 100,000 | 121 ms | 2 ms | 60.5× |
+| 190,000 | 252 ms | 2 ms | **126×** |
 
 ---
 
