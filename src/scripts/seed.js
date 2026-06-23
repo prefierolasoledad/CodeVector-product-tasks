@@ -98,7 +98,12 @@ async function seed() {
     // "ns not found" just means the collection didn't exist yet — fine
     if (err.codeName !== "NamespaceNotFound") throw err;
   });
-  console.log("Dropped existing products collection (if any).\n");
+  console.log("Dropped existing products collection (if any).");
+
+  // Re-create the indexes explicitly so that Mongoose's index definitions are built
+  // on the collection before insertions start.
+  await Product.syncIndexes();
+  console.log("Synchronized and built database indexes.\n");
 
   const t0 = Date.now();
 
